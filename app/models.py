@@ -19,7 +19,7 @@ class _DataBase():
     '''
     _db_name = 'messenger'
     _db_user = 'maxti'
-    _user_password = '1Alexandr1'
+    _user_password = '********'
     _db_host = 'localhost'
     _db_port = '5432'
 
