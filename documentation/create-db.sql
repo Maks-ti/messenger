@@ -14,7 +14,7 @@ name VARCHAR(50) NOT NULL
 создана для оптимизации 
 (данные из user используются чаще чем из profile_info) */
 CREATE TABLE profile_info (
-user_id INTEGER PRIMARY KEY REFERENCES users(id),
+id INTEGER PRIMARY KEY REFERENCES users(id),
 profile_img BYTEA,
 biography TEXT,
 about TEXT
@@ -26,7 +26,8 @@ about TEXT
 CREATE TABLE follows (
 follower_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
 followed_id INTEGER REFERENCES users(id),
-PRIMARY KEY (follower_id, followed_id)
+PRIMARY KEY (follower_id, followed_id),
+CHECK(follower_id <> followed_id)
 );
 
 /* --- --- --- чаты и сообжения --- --- --- */
