@@ -241,6 +241,9 @@ class Post(Entity):
                 self.post_text,
                 self.image,)
 
+    def __repr__(self):
+        return f'<Post {self.title}>'
+
 
 class Comment(Entity):
     '''
@@ -508,6 +511,17 @@ class Posts(Table):
     def delete(cls, id: int) -> bool:
         query = cls._delete_query.format(cls.name, id)
         return _DataBase.execute_query(query)
+
+    @classmethod
+    def get_posts_by_user_id(cls, user_id: int) -> list[Post]:
+        query = '''
+        SELECT *
+        FROM {}
+        WHERE user_id = {}
+        '''.format(cls.name, user_id)
+        res = _DataBase.select_query(query)
+        res = list(map(lambda x: Post(*x), res))
+        return res
 
 
 class Comments(Table):

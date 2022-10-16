@@ -96,6 +96,7 @@ def user(login):
         {'author': user, 'body': 'Test post #1'},
         {'author': user, 'body': 'Test post #2'},
     ] # mock obj
+    # posts = Posts.get_post_by_user_id
     return render_template('user.html', user=user, posts=posts)
 
 
