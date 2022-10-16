@@ -15,6 +15,11 @@ from app.models import Users, User
 @app.route('/index')
 @login_required
 def index():
+    '''
+    условно домашняя страница
+    с лентой новостей (из постов юзеров на которых
+    текущий юзер подписан
+    '''
     user = {'username': 'maks-ti'}
     posts = [
         {
@@ -46,7 +51,8 @@ def login():
     если некоректно - False
     '''
     if form.validate_on_submit():
-        user: User = Users.get_by_username(form.username.data) # получение объекта пользователя
+        # получение объекта пользователя
+        user: User = Users.get_by_login(form.login.data)
         if user is None or not user.check_password(form.password.data):
             flash('Invalid username or password')
             return redirect(url_for('login'))
@@ -71,7 +77,7 @@ def register():
         return redirect(url_for('index'))
     form = RegistrationForm()
     if form.validate_on_submit():
-        user: User = User(username=form.username.data, email=form.email.data)
+        user: User = User(login=form.login.data, name=form.name.data)
         user.set_password(form.password.data)
         # добавляем нового пользователя в базу
         Users.add(user)
@@ -80,10 +86,10 @@ def register():
     return render_template('register.html', title='Register', form=form)
 
 
-@app.route('/user/<username>')
+@app.route('/user/<login>')
 @login_required
-def user(username):
-    user: User = Users.get_by_username(username)
+def user(login):
+    user: User = Users.get_by_login(login)
     if user is None:
         abort(404)
     posts = [
@@ -97,7 +103,11 @@ def user(username):
 #chcp 1251
 #PATH C:\Program Files\PostgreSQL\14\bin;%PATH%
 #psql -h localhost -p 5432 -d weather_parser -U maxti
+#psql -h localhost -p 5432 -d messenger -U maxti
+
+# активировать виртуальную среду
 #C:\Users\maxti\PycharmProjects\messenger>venv\Scripts\activate
 
-
+# запустить flask
+# python -m flask run --port 5000
 

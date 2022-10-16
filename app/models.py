@@ -36,7 +36,7 @@ class _DataBase(object):
     '''
     _db_name = 'messenger'
     _db_user = 'maxti'
-    _user_password = '********'
+    _user_password = '1Alexandr1'
     _db_host = 'localhost'
     _db_port = '5432'
 
@@ -136,7 +136,7 @@ class User(UserMixin, Entity):
         self.password_hash = generate_password_hash(password)
 
 
-    def check_password(self, password):
+    def check_password(self, password: str):
         return check_password_hash(self.password_hash, password)
 
 
@@ -540,4 +540,6 @@ class Comments(Table):
 @login.user_loader
 def load_user(id: str):
     user: User = Users.get_by_id(int(id))
+    print(f'user loaded; user = {user}')
     return user
+
