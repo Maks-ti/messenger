@@ -8,8 +8,25 @@ from app import login
 
 from abc import ABC, abstractmethod
 import psycopg2
+from datetime import datetime
 
-class _DataBase():
+
+class NULL(object):
+    '''
+    класс NULL, реализует патерн singleton
+    лечит null значение для postgress
+    (синглтон не обязателен но так проще)
+    '''
+    def __new__(cls):
+        if not hasattr(cls, 'instance'):
+            cls.instance = super(NULL, cls).__new__(cls)
+        return cls.instance
+
+    def __repr__(self):
+        return 'null'
+
+
+class _DataBase(object):
     '''
     класс описывающий базу даннных
     данный клас будет инкапсулировать в себе все необходимые для подключения к базе
@@ -83,8 +100,175 @@ class _DataBase():
         return None
 
 
+''' //---//---//---// ENTITIES //---//---//---// '''
+class Entity(ABC):
+    @abstractmethod
+    def tup(self) -> tuple:
+        '''
+        метод возвращает кортеж для добавления его в базуданных
+        предполагается, что если в скрипте создания таблицы
+        поле id генерирутеся автоматически, возвращать данное значение
+        не нужно, в противном случае наоборот необходимо'''
+        pass
 
 
+class User(UserMixin, Entity):
+    '''
+    класс пользователя
+    описывает пользователя как класс
+    '''
+    def __init__(self,
+                 id: int = 0,
+                 login: str = '',
+                 password_hash: str = '',
+                 name: str = ''):
+        self.id: int = id
+        self.login: str = login
+        self.name: str = name
+        self.password_hash: str = password_hash
+
+
+    def __repr__(self):
+        return f'<User {self.login}>'
+
+
+    def set_password(self, password: str):
+        self.password_hash = generate_password_hash(password)
+
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+
+
+    def tup(self) -> tuple:
+        return (self.login,
+                self.password_hash,
+                self.name,)
+
+
+class Profile(Entity):
+    '''
+    класс описывающий профиль пользователя
+    '''
+    def __init__(self,
+                 id: int,
+                 profile_img: object = NULL(),
+                 biography: str = '',
+                 about: str = ''):
+        self.id = id
+        self.profile_img = profile_img
+        self.biography = biography
+        self.about = about
+
+    def tup(self) -> tuple:
+        return (self.id,
+                self.profile_img,
+                self.biography,
+                self.about,)
+
+
+class Chat(Entity):
+    '''
+    класс описывающий сущность чата
+    '''
+    def __init__(self,
+                 id: int = 0,
+                 name: str = '',
+                 counter: int = 0,
+                 image: object = NULL()):
+        self.id = id
+        self.name = name
+        self.counter = counter
+        self.image = image
+
+    def tup(self) -> tuple:
+        return (self.name,
+                self.counter,
+                self.image,)
+
+
+class Message(Entity):
+    '''
+    класс описывающий сообщение
+    '''
+    def __init__(self,
+                 id: int = 0,
+                 chat_id: int = 0,
+                 user_id: int = 0,
+                 parent_id: int = NULL(),
+                 mes_text: str = '',
+                 sends_time: datetime = datetime.now()):
+        self.id = id
+        self.chat_id = chat_id
+        self.user_id = user_id
+        self.parent_id = parent_id
+        self.mes_text = mes_text
+        self.sends_time = sends_time
+
+    def tup(self) -> tuple:
+        return (self.chat_id,
+                self.user_id,
+                self.parent_id,
+                self.mes_text,
+                self.sends_time,)
+
+
+class Post(Entity):
+    '''
+    класс описывает пост
+    '''
+    def __init__(self,
+                 id: int = 0,
+                 user_id: int = 0,
+                 title: str = '',
+                 publication_date: datetime = datetime.now(),
+                 last_edit_date: datetime = datetime.now(),
+                 post_text: str = '',
+                 image: object = NULL()):
+        self.id = id
+        self.user_id = user_id
+        self.title = title
+        self.publication_date = publication_date
+        self.last_edit_date = last_edit_date
+        self.post_text = post_text
+        self.image = image
+
+    def tup(self) -> tuple:
+        return (self.user_id,
+                self.title,
+                str(self.publication_date),
+                str(self.last_edit_date),
+                self.post_text,
+                self.image,)
+
+
+class Comment(Entity):
+    '''
+    класс описывающий коментарий кпосту
+    '''
+    def __init__(self,
+                 id: int = 0,
+                 post_id: int = 0,
+                 commentator_id: int = 0,
+                 parent_id: int = NULL(),
+                 comment_text: str = '',
+                 sends_time: datetime = datetime.now()):
+        self.id = id
+        self.post_id = post_id
+        self.commentator_id = commentator_id
+        self.parent_id = parent_id
+        self.comment_text = comment_text
+        self.sends_time = sends_time
+
+    def tup(self) -> tuple:
+        return (self.post_id,
+                self.commentator_id,
+                self.parent_id,
+                self.comment_text,
+                str(self.sends_time),)
+
+
+''' //---//---//---// TABLES //---//---//---// '''
 class Table(ABC):
     '''
     класс описывающий сущность/таблицу в базе
@@ -96,7 +280,6 @@ class Table(ABC):
     '''
     name = 'table'
     columns: list[str]
-    create_script = ''
     # insert_query.format('table_name', 'columns...', values: tuple)
     _insert_query = '''
     INSERT INTO {}
@@ -106,8 +289,8 @@ class Table(ABC):
     ;
     '''
 
-    _get_query = '''
-    SELECT *
+    _delete_query = '''
+    DELETE
     FROM {}
     WHERE id = {}
     ;
@@ -115,161 +298,108 @@ class Table(ABC):
 
     @classmethod
     @abstractmethod
-    def add(cls, obj: object):
+    def add(cls, obj: object) -> bool:
         pass
 
     @classmethod
     @abstractmethod
-    def get_by_id(cls, id: int):
+    def delete(cls, *params) -> bool:
         pass
-
-
-class User(UserMixin):
-    '''
-    класс пользователя
-    описывает пользователя как класс
-    '''
-    def __init__(self,
-                 id: int = 0,
-                 username: str = '',
-                 email: str = '',
-                 password_hash: str = ''):
-        self.id: int = id
-        self.username: str = username
-        self.email: str = email
-        self.password_hash: str = password_hash
-
-
-    def __repr__(self):
-        return f'<User {self.username}>'
-
-
-    def set_password(self, password: str):
-        self.password_hash = generate_password_hash(password)
-
-
-    def check_password(self, password):
-        return check_password_hash(self.password_hash, password)
-
-
-    def tup(self):
-        return (self.username,
-                self.email,
-                self.password_hash,)
 
 
 class Users(Table):
     '''
-    класс описывающий сущность пользователя, т.е.
-    таблицу с пользователями в бд
-    а также данный класс инкапсулирует в себе всё взаимодействие с бд
+    класс описывает таблицу, хранящую информацию о пользователях
     '''
+
     name = 'users'
     columns = [
-        'username',
-        'email',
+        'login',
         'password_hash',
+        'name',
     ]
-    create_script = '''
-CREATE TABLE IF NOT EXISTS users(
-    id      INTEGER PRIMARY KEY GENERATED BY DEFAULT AS IDENTITY,
-    username        VARCHAR(64),
-    email           VARCHAR(120),
-    password_hash   VARCHAR(128),
-    UNIQUE (username)
-);
-    '''
+    _get_by_id_query = '''
+        SELECT *
+        FROM {}
+        WHERE id = {}
+        ;
+        '''
 
     @classmethod
     def add(cls, user: User) -> bool:
         query = cls._insert_query.format(cls.name, ', '.join(cls.columns), user.tup())
         return _DataBase.execute_query(query)
 
-
     @classmethod
     def get_by_id(cls, id: int) -> User:
-        query = cls._get_query.format(cls.name, id)
+        query = cls._get_by_id_query.format(cls.name, id)
         res = _DataBase.select_query(query)
         if res is None or len(res) == 0:
             return None
         params = res[0]
         return User(* params)
-
-
-    @ classmethod
-    def get_by_username(cls, username: str):
-        query = '''
-        SELECT * 
-        FROM {}
-        WHERE username = '{}'
-        ;
-        '''.format(cls.name, username)
-        res = _DataBase.select_query(query)
-        if res is None or len(res) == 0:
-            return None
-        params = res[0]
-        return User(* params)
-
 
     @classmethod
-    def get_by_email(cls, email: str):
+    def get_by_login(cls, login: str) -> bool:
         query = '''
         SELECT * 
         FROM {}
-        WHERE email = '{}'
+        WHERE login = '{}'
         ;
-        '''.format(cls.name, email)
+        '''.format(cls.name, login)
         res = _DataBase.select_query(query)
         if res is None or len(res) == 0:
             return None
         params = res[0]
         return User(* params)
+
+    @classmethod
+    def delete(cls, id: int) -> bool:
+        query = cls._delete_query.format(cls.name, id)
+        return _DataBase.execute_query(query)
+
+
+class Profiles(Table):
+    '''
+    класс описывающий таблицу профилей пользователя
+    связана один-к-одному с таблицей users
+    '''
+
+    name = 'profile_info'
+    columns = [
+        'id',
+        'profile_img',
+        'biography',
+        'about',
+    ]
+    @classmethod
+    def add(cls, profile: Profile) -> bool:
+        query = cls._insert_query.format(cls.name, ', '.join(cls.columns), profile.tup())
+        return _DataBase.execute_query(query)
+
+    @classmethod
+    def delete(cls, id: int) -> bool:
+        query = cls._delete_query.format(cls.name, id)
+        return _DataBase.execute_query(query)
 
 
 class Follows(Table):
-    ''''
-    класс описывающий сущности подписок (взаимосвязей)
-    - явл. дополнительной таблице для реализации связи многие-ко-многим
-    для таблицы Users с самой собой
     '''
-    '''
-    ***надо дополнить не написаны cascade
-    CREATE TABLE follows(
-    follower_id
-    INT REFERENCES users(id),
-    followed_id INT REFERENCES users(id),
-    PRIMARY KEY (follower_id, followed_id),
-    CHECK (followed_id <> follower_id) )
-    ;
+    класс описывает таблицу
+    реализующую связь многие-ко-многим для
+    таблиц users и users (связь сама с собой)
     '''
 
     name = 'follows'
     columns = ['follower_id', 'followed_id']
+
     @classmethod
-    def add(cls, follower_id: int, followed_id: int):
+    def add(cls, follower_id: int, followed_id: int) -> bool:
         query = cls._insert_query.format(cls.name, ', '.join(cls.columns), (follower_id, followed_id))
         return _DataBase.execute_query(query)
 
-    '''так как данная таблица реализует связь двух записей таблицы users
-    не имеет смысла создавать запрос на выборку по ключу так как каждый кортеж в данной таблице уникален
-    логичнее определить метод возвращающий все связи для User`а с конкртетным ID
-    данную функцию и будет выполнять данное переопределение метода'''
     @classmethod
-    def get_by_id(cls, id: int) -> list[(int, int)]:
-        query = '''
-            SELECT *
-            FROM {}
-            WHERE {} = {}
-            ;
-        '''.format(cls.name, cls.columns[0],  id)
-        res = _DataBase.select_query(query)
-        if res is None or len(res) == 0:
-            return None
-        return res
-
-
-    @classmethod
-    def delete_follow(cls, follower_id: int, followed_id: int) -> bool:
+    def delete(cls, follower_id: int, followed_id: int) -> bool:
         query = '''
             DELETE
             FROM {}
@@ -277,11 +407,136 @@ class Follows(Table):
             AND {} = {}
             ;
         '''.format(cls.name, cls.columns[0], follower_id, cls.columns[1], followed_id)
-        # тут надло выполнить запрос
-
-        return
+        return _DataBase.execute_query(query)
 
 
+class Chats(Table):
+    '''
+    класс описыает таблицу чатов
+    '''
+
+    name = 'chat'
+    columns = [
+        'name',
+        'counter',
+        'image',
+    ]
+
+    @classmethod
+    def add(cls, chat: Chat) -> bool:
+        query = cls._insert_query.format(cls.name, ', '.join(cls.columns), chat.tup())
+        return _DataBase.execute_query(query)
+
+    @classmethod
+    def delete(cls, id: int) -> bool:
+        query = cls._delete_query.format(cls.name, id)
+        return _DataBase.execute_query(query)
+
+
+class User_in_chat(Table):
+    '''
+    класс реализует связь многие-ко-многим для
+    таблиц users и chat
+    '''
+
+    name = 'user_in_chat'
+    columns = ['user_id', 'chat_id']
+
+    @classmethod
+    def add(cls, user_id: int, chat_id: int) -> bool:
+        query = cls._insert_query.format(cls.name, ', '.join(cls.columns), (user_id, chat_id))
+        return _DataBase.execute_query(query)
+
+    @classmethod
+    def delete(cls, user_id: int, chat_id: int) -> bool:
+        query = '''
+            DELETE
+            FROM {}
+            WHERE {} = {}
+            AND {} = {}
+            ;
+        '''.format(cls.name, cls.columns[0], user_id, cls.columns[1], chat_id)
+        return _DataBase.execute_query(query)
+
+
+class Messages(Table):
+    '''
+    класс описывающий талицу сообщений
+    '''
+
+    name = 'message'
+    columns = [
+        'chat_id',
+        'user_id',
+        'parent_id',
+        'mes_text',
+        'sends_time',
+    ]
+
+    @classmethod
+    def add(cls, message: Message) -> bool:
+        query = cls._insert_query.format(cls.name, ', '.join(cls.columns), message.tup())
+        return _DataBase.execute_query(query)
+
+    @classmethod
+    def delete(cls, id: int) -> bool:
+        query = cls._delete_query.format(cls.name, id)
+        return _DataBase.execute_query(query)
+
+
+class Posts(Table):
+    '''
+    класс описывающий таблицу постов
+    '''
+
+    name = 'post'
+    columns = [
+        'user_id',
+        'title',
+        'publication_date',
+        'last_edit_date',
+        'post_text',
+        'image',
+    ]
+
+    @classmethod
+    def add(cls, post: Post) -> bool:
+        query = cls._insert_query.format(cls.name, ', '.join(cls.columns), post.tup())
+        return _DataBase.execute_query(query)
+
+    @classmethod
+    def delete(cls, id: int) -> bool:
+        query = cls._delete_query.format(cls.name, id)
+        return _DataBase.execute_query(query)
+
+
+class Comments(Table):
+    '''
+    класс описывающий комментарий к посту
+    '''
+
+    name = 'comment'
+    columns = [
+        'post_id',
+        'commentator_id',
+        'parent_id',
+        'comment_text',
+        'sends_time',
+    ]
+
+    @classmethod
+    def add(cls, comment: Comment) -> bool:
+        query = cls._insert_query.format(cls.name, ', '.join(cls.columns), comment.tup())
+        return _DataBase.execute_query(query)
+
+    @classmethod
+    def delete(cls, id: int) -> bool:
+        query = cls._delete_query.format(cls.name, id)
+        return _DataBase.execute_query(query)
+
+
+
+# метод загрузки пользователя (не трогать)
 @login.user_loader
 def load_user(id: str):
     user: User = Users.get_by_id(int(id))
