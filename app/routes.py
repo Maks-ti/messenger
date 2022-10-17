@@ -8,7 +8,10 @@ from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.urls import url_parse
 from app import app
 from app.forms import LoginForm, RegistrationForm
-from app.models import Users, User
+# наверноепроще просто заимпортить все модели предваритеьно установив моификаторы доступа rpotected на те которые импортить не надо (или определить функцию импорта)
+from app.models import User, Profile, Chat, Message, Post, Comment
+from app.models import Users, Profiles, Follows, Chats, User_in_chat, Messages, Posts, Comments
+
 
 
 @app.route('/')
@@ -92,11 +95,8 @@ def user(login):
     user: User = Users.get_by_login(login)
     if user is None:
         abort(404)
-    posts = [
-        {'author': user, 'body': 'Test post #1'},
-        {'author': user, 'body': 'Test post #2'},
-    ] # mock obj
-    # posts = Posts.get_post_by_user_id
+    # получаем посты из базы
+    posts = Posts.get_posts_by_user_id(user.id)
     return render_template('user.html', user=user, posts=posts)
 
 
