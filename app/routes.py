@@ -7,7 +7,7 @@ from flask import render_template, flash, redirect, url_for, request, abort
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.urls import url_parse
 from app import app
-from app.forms import LoginForm, RegistrationForm
+from app.forms import LoginForm, RegistrationForm, EditProfileForm
 # наверноепроще просто заимпортить все модели предваритеьно установив моификаторы доступа rpotected на те которые импортить не надо (или определить функцию импорта)
 from app.models import User, Profile, Chat, Message, Post, Comment
 from app.models import Users, Profiles, Follows, Chats, User_in_chat, Messages, Posts, Comments
@@ -96,8 +96,20 @@ def user(login):
     if user is None:
         abort(404)
     # получаем посты из базы
-    posts = Posts.get_posts_by_user_id(user.id)
-    return render_template('user.html', user=user, posts=posts)
+    posts: list[Post] = Posts.get_posts_by_user_id(user.id)
+    if posts is None:
+        posts = []
+    profile: Profile = Profiles.get_by_id(user.id)
+    if profile is None:
+        profile = Profile(user.id)
+    return render_template('user.html', user=user, posts=posts, profile=profile)
+
+
+@app.route('/edit_profile', methods=['GET', 'POST'])
+@login_required
+def edit_profile():
+    form = EditProfileForm()
+    
 
 
 

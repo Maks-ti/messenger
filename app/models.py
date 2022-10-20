@@ -153,8 +153,8 @@ class Profile(Entity):
     def __init__(self,
                  id: int,
                  profile_img: object = NULL(),
-                 biography: str = '',
-                 about: str = ''):
+                 biography: str = None,
+                 about: str = None):
         self.id = id
         self.profile_img = profile_img
         self.biography = biography
@@ -165,6 +165,11 @@ class Profile(Entity):
                 self.profile_img,
                 self.biography,
                 self.about,)
+
+    def __eq__(self, other):
+        if other is None:
+            return True
+        return False
 
 
 class Chat(Entity):
@@ -232,6 +237,8 @@ class Post(Entity):
         self.last_edit_date = last_edit_date
         self.post_text = post_text
         self.image = image
+        # автор поста User не храниться в базе (однако является очень удобной связкой для представления поста в шаблонах)
+        self.author: User = Users.get_by_id(user_id)
 
     def tup(self) -> tuple:
         return (self.user_id,
@@ -343,7 +350,7 @@ class Users(Table):
         return User(* params)
 
     @classmethod
-    def get_by_login(cls, login: str) -> bool:
+    def get_by_login(cls, login: str) -> User:
         query = '''
         SELECT * 
         FROM {}
@@ -384,6 +391,19 @@ class Profiles(Table):
     def delete(cls, id: int) -> bool:
         query = cls._delete_query.format(cls.name, id)
         return _DataBase.execute_query(query)
+
+    @classmethod
+    def get_by_id(cls, id: int) -> Profile:
+        query = '''
+        SELECT * 
+        FROM {}
+        WHERE id = {}
+        '''.format(cls.name, id)
+        res = _DataBase.select_query(query)
+        if res is None or len(res) == 0:
+            return None
+        res = res[0]
+        return Profile(* res)
 
 
 class Follows(Table):
@@ -520,6 +540,8 @@ class Posts(Table):
         WHERE user_id = {}
         '''.format(cls.name, user_id)
         res = _DataBase.select_query(query)
+        if res is None or len(res) == 0:
+            return None
         res = list(map(lambda x: Post(*x), res))
         return res
 

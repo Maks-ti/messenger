@@ -3,8 +3,9 @@
 '''
 
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, BooleanField, SubmitField
-from wtforms.validators import DataRequired, ValidationError, Email, EqualTo
+from flask_wtf.file import FileField, FileAllowed, FileRequired
+from wtforms import StringField, PasswordField, BooleanField, SubmitField, TextAreaField
+from wtforms.validators import DataRequired, ValidationError,  EqualTo, Length
 from app.models import User, Users
 
 
@@ -17,8 +18,6 @@ class LoginForm(FlaskForm):
 
 class RegistrationForm(FlaskForm):
     login = StringField('Login', validators=[DataRequired()])
-    # email removed
-    # email = StringField('Email', validators=[DataRequired(), Email()])
     name = StringField('Name', validators=[DataRequired()])
     password = PasswordField('Password', validators=[DataRequired()])
     password2 = PasswordField(
@@ -31,12 +30,12 @@ class RegistrationForm(FlaskForm):
             raise ValidationError('Please use a different username.')
         return
 
-    '''
-    # removed with email field
-    def validate_email(self, email):
-        user: User = Users.get_by_email(email.data)
-        if user is not None:
-            raise ValidationError('Please use a different email address.')
-        return
-    '''
+
+class EditProfileForm(FlaskForm):
+    name = StringField('Name', validators=[DataRequired()])
+    about = TextAreaField('About me', validators=[Length(min=0, max=300)])
+    biography = TextAreaField('Biography', validators=[Length(min=0, max=2000)])
+    image = FileField('Profile image', validators=[FileRequired(), FileAllowed(['jpg', 'png', 'jpeg']), 'Images only!'])
+    submit = SubmitField('Submit')
+
 

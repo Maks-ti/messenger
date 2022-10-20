@@ -4,11 +4,18 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <h1>User: {{ user.name }}</h1>
-    <hr>
+    <table>
+        <tr>
+            <td><img src =""></td>
+            <td>
+                <h1>User: {{ user.name }}</h1>
+                {% if profile.about %}<p>about me: {{ profile.about }}</p>{% endif %}
+                {% if profile.biography %}<p>my biography: {{ profile.biography }}</p>{% endif %}
+            </td>
+        </tr>
+    </table>
+    <br>
     {% for post in posts %}
-    <p>
-        <b>title: {{ post.title }}</b> <br> {{ post.post_text }}
-    </p>
+        {% include '_post.html' %}
     {% endfor %}
 {% endblock %}
