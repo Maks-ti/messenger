@@ -2,10 +2,12 @@
 '''
 файл функций просмотра (файл представлений)
 '''
+import os
 
 from flask import render_template, flash, redirect, url_for, request, abort
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.urls import url_parse
+from werkzeug.utils import secure_filename
 from app import app
 from app.forms import LoginForm, RegistrationForm, EditProfileForm
 # наверноепроще просто заимпортить все модели предваритеьно установив моификаторы доступа rpotected на те которые импортить не надо (или определить функцию импорта)
@@ -109,8 +111,35 @@ def user(login):
 @login_required
 def edit_profile():
     form = EditProfileForm()
-    
-
+    # если внесены изменения (метод post) проверяем вадидаторы
+    if form.validate_on_submit():
+        name = form.name.data
+        about = form.about.data
+        biography = form.biography.data
+        profile = Profile(current_user.id, about=about, biography=biography)
+        file = form.image.data
+        if file is not None and file.filename != '':
+            filename = secure_filename(file.filename)
+            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            profile.profile_img = '../static/images/' + filename
+        else:
+            # если изображение не добавлено поставим старое (реализация не оптимальная)
+            # по хорошему сделать другой метод обновления данных (тогда не надо будет выполнять запрос)
+            # или просто нормально переписать update
+            # TO DO
+            profile.profile_img = Profiles.get_by_id(current_user.id).profile_img
+        # обновляем данные
+        Profiles.update(profile)
+        Users.update_name(current_user.id, name)
+        flash('Your changes have been saved.')
+        return redirect(url_for('edit_profile'))
+    # если только вызвали страницу заполняем поля старыми (существующими сейчас) значениями
+    elif request.method == 'GET':
+        profile = Profiles.get_by_id(current_user.id)
+        form.name.data = current_user.name
+        form.about.data = profile.about
+        form.biography.data = profile.biography
+    return render_template('edit_profile.html', title='Edit Profile', form=form)
 
 
 #chcp 1251

@@ -35,7 +35,7 @@ class EditProfileForm(FlaskForm):
     name = StringField('Name', validators=[DataRequired()])
     about = TextAreaField('About me', validators=[Length(min=0, max=300)])
     biography = TextAreaField('Biography', validators=[Length(min=0, max=2000)])
-    image = FileField('Profile image', validators=[FileRequired(), FileAllowed(['jpg', 'png', 'jpeg']), 'Images only!'])
+    image = FileField('Profile image', validators=[FileAllowed(['jpg', 'png', 'jpeg'])])
     submit = SubmitField('Submit')
 
 

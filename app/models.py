@@ -152,9 +152,9 @@ class Profile(Entity):
     '''
     def __init__(self,
                  id: int,
-                 profile_img: object = NULL(),
-                 biography: str = None,
-                 about: str = None):
+                 profile_img: str = NULL(),
+                 biography: str = NULL(),
+                 about: str = NULL()):
         self.id = id
         self.profile_img = profile_img
         self.biography = biography
@@ -170,6 +170,12 @@ class Profile(Entity):
         if other is None:
             return True
         return False
+
+    def avatar(self) -> str:
+        print(self.profile_img)
+        if self.profile_img == '' or self.profile_img == NULL() or self.profile_img is None:
+            return None
+        return self.profile_img
 
 
 class Chat(Entity):
@@ -368,6 +374,15 @@ class Users(Table):
         query = cls._delete_query.format(cls.name, id)
         return _DataBase.execute_query(query)
 
+    @classmethod
+    def update_name(cls, user_id: int, name: str) -> bool:
+        query = '''
+        UPDATE {}
+        SET name = '{}'
+        WHERE id = {}
+        ;'''.format(cls.name, name, user_id)
+        return _DataBase.execute_query(query)
+
 
 class Profiles(Table):
     '''
@@ -397,13 +412,33 @@ class Profiles(Table):
         query = '''
         SELECT * 
         FROM {}
-        WHERE id = {}
+        WHERE id = {};
         '''.format(cls.name, id)
         res = _DataBase.select_query(query)
         if res is None or len(res) == 0:
             return None
         res = res[0]
         return Profile(* res)
+
+    @classmethod
+    def update(cls, new_profile: Profile) -> bool:
+        profile = Profiles.get_by_id(new_profile.id)
+        query: str
+        if profile is None:
+            query = cls._insert_query.format(cls.name, ', '.join(cls.columns), new_profile.tup())
+        else:
+            query = '''
+            UPDATE {}
+            SET profile_img = '{}',
+            biography = '{}',
+            about = '{}'
+            WHERE id = {}
+            '''.format(cls.name,
+                       new_profile.profile_img,
+                       new_profile.biography,
+                       new_profile.about,
+                       new_profile.id)
+        return _DataBase.execute_query(query)
 
 
 class Follows(Table):

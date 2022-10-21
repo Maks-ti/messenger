@@ -20,6 +20,9 @@ biography TEXT,
 about TEXT
 );
 
+ALTER TABLE profile_info
+ALTER COLUMN profile_img SET DATA TYPE VARCHAR(120);
+
 /* таблица описывающая подписки между User`ами (связь многие ко многим между user и user)
 подразумевается, что id в таблице user не меняется поэтому 
 ограничения прописываются только в случае удаления */
