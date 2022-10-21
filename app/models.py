@@ -153,8 +153,8 @@ class Profile(Entity):
     def __init__(self,
                  id: int,
                  profile_img: str = NULL(),
-                 biography: str = NULL(),
-                 about: str = NULL()):
+                 biography: str = '',
+                 about: str = ''):
         self.id = id
         self.profile_img = profile_img
         self.biography = biography

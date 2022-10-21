@@ -116,18 +116,15 @@ def edit_profile():
         name = form.name.data
         about = form.about.data
         biography = form.biography.data
-        profile = Profile(current_user.id, about=about, biography=biography)
+        profile = Profiles.get_by_id(current_user.id)
+        profile.about = about
+        profile.biography = biography
         file = form.image.data
+        # если файл добавлен, то обновим и его тоже
         if file is not None and file.filename != '':
             filename = secure_filename(file.filename)
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
             profile.profile_img = '../static/images/' + filename
-        else:
-            # если изображение не добавлено поставим старое (реализация не оптимальная)
-            # по хорошему сделать другой метод обновления данных (тогда не надо будет выполнять запрос)
-            # или просто нормально переписать update
-            # TO DO
-            profile.profile_img = Profiles.get_by_id(current_user.id).profile_img
         # обновляем данные
         Profiles.update(profile)
         Users.update_name(current_user.id, name)
