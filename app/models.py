@@ -650,6 +650,18 @@ class Posts(Table):
         res = list(map(lambda x: Post(*x), res))
         return res
 
+    @classmethod
+    def get_all_posts(cls) -> list[Post]:
+        query = '''
+        SELECT *
+        FROM {}
+        '''.format(cls.name)
+        res = _DataBase.select_query(query)
+        if res is None or len(res) == 0:
+            return None
+        res = list(map(lambda x: Post(*x), res))
+        return res
+
 
 class Comments(Table):
     '''

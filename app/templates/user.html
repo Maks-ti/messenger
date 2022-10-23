@@ -7,7 +7,7 @@
     <table>
         <tr>
             {% if profile.avatar() %}
-                <td><img src ="{{ profile.avatar() }}" alt="avatar" width="150" ></td>
+            <td><img src ="{{ profile.avatar() }}" alt="avatar" width="150" ></td>
             {% endif %}
             <td>
                 <h1>User: {{ user.name }}</h1>
@@ -25,6 +25,35 @@
                     <p><a href="{{ url_for('unfollow', login=user.login) }}">Unfollow</a></p>
                 {% endif %}
             </td>
+            {% if form %}
+            <td>
+                <form action="" method="post" enctype="multipart/form-data">
+                    {{ form.hidden_tag() }}
+                    <p>
+                        {{ form.title.label }}<br>
+                        {{ form.title(cols=32, rows=4) }}<br>
+                        {% for error in form.title.errors %}
+                            <span style="color: red;">[{{ error }}]</span>
+                        {% endfor %}
+                    </p>
+                    <p>
+                        {{ form.post_text.label }}<br>
+                        {{ form.post_text(cols=64, rows=5) }}<br>
+                        {% for error in form.post_text.errors %}
+                            <span style="color: red;">[{{ error }}]</span>
+                        {% endfor %}
+                    </p>
+                    <p>
+                        {{ form.image.label }}<br>
+                        {{ form.image }}<br>
+                        {% for error in form.image.errors %}
+                            <span style="color: red;">[{{ error }}]</span>
+                        {% endfor %}
+                    </p>
+                    <p>{{ form.submit() }}</p>
+                </form>
+            </td>
+            {% endif %}
         </tr>
     </table>
     <hr>

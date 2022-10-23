@@ -17,8 +17,8 @@ from app.models import Users, Profiles, Follows, Chats, User_in_chat, Messages, 
 
 
 
-@app.route('/', methods=['GET', 'POST'])
-@app.route('/index', methods=['GET', 'POST'])
+@app.route('/')
+@app.route('/index')
 @login_required
 def index():
     '''
@@ -26,23 +26,10 @@ def index():
     с лентой новостей (из постов юзеров на которых
     текущий юзер подписан
     '''
-    form = PostForm()
-    if form.validate_on_submit():
-        post = Post(user_id=current_user.id,
-                    title=form.title.data,
-                    post_text=form.post_text.data,
-                    publication_date=datetime.now())
-        file = form.image.data
-        # если файл добавлен, то обновим и его тоже
-        if file is not None and file.filename != '':
-            filename = secure_filename(file.filename)
-            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-            post.image = '../static/images/' + filename
-        Posts.add(post)
-        flash('Your post added')
-        return redirect(url_for('index'))
     posts = Posts.get_followed_posts(current_user.id)
-    return render_template('index.html', form=form, title='Home', posts=posts)
+    if posts is None:
+        posts = []
+    return render_template('index.html', title='Home', posts=posts)
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -93,7 +80,7 @@ def register():
     return render_template('register.html', title='Register', form=form)
 
 
-@app.route('/user/<login>')
+@app.route('/user/<login>', methods=['GET', 'POST'])
 @login_required
 def user(login):
     user: User = Users.get_by_login(login)
@@ -106,6 +93,25 @@ def user(login):
     profile: Profile = Profiles.get_by_id(user.id)
     if profile is None:
         profile = Profile(user.id)
+    # если мы на своей странице
+    if login == current_user.login:
+        # мадюем форму написания поста
+        form = PostForm()
+        if form.validate_on_submit():
+            post = Post(user_id=current_user.id,
+                        title=form.title.data,
+                        post_text=form.post_text.data,
+                        publication_date=datetime.now())
+            file = form.image.data
+            # если файл добавлен, то обновим и его тоже
+            if file is not None and file.filename != '':
+                filename = secure_filename(file.filename)
+                file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                post.image = '../static/images/' + filename
+            Posts.add(post)
+            flash('Your post added')
+            return redirect(url_for('user', login=login))
+        return render_template('user.html', form=form, user=user, posts=posts, profile=profile, Follows=Follows, len=len)
     return render_template('user.html', user=user, posts=posts, profile=profile, Follows=Follows, len=len)
 
 
@@ -119,6 +125,8 @@ def edit_profile():
         about = form.about.data
         biography = form.biography.data
         profile = Profiles.get_by_id(current_user.id)
+        if profile is None:
+            profile = Profile(id = current_user.id)
         profile.about = about
         profile.biography = biography
         file = form.image.data
@@ -135,9 +143,12 @@ def edit_profile():
     # если только вызвали страницу заполняем поля старыми (существующими сейчас) значениями
     elif request.method == 'GET':
         profile = Profiles.get_by_id(current_user.id)
-        form.name.data = current_user.name
-        form.about.data = profile.about
-        form.biography.data = profile.biography
+        if profile is not None:
+            form.name.data = current_user.name
+            form.about.data = profile.about
+            form.biography.data = profile.biography
+        else:
+            form.name.data = current_user.name
     return render_template('edit_profile.html', title='Edit Profile', form=form)
 
 
@@ -190,6 +201,17 @@ def followings(login):
         return redirect(url_for('index'))
     followings = Follows.get_followings(user.id)
     return render_template('followings.html', followings=followings)
+
+
+@app.route('/explore')
+@login_required
+def explore():
+    posts: list[Posts] = Posts.get_all_posts()
+    if posts is None:
+        posts = []
+    return render_template('index.html', posts=posts)
+
+
 
 
 

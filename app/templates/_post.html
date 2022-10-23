@@ -1,13 +1,13 @@
 
 <table>
     <tr valign="top">
-        <td>
-            {{ post.author.name }} says:<br>
-            <b>{{ post.title }}</b> <br>
-            {{ post.post_text }}
-        </td>
         {% if post.image %}
         <td><img src="{{post.image}}" alt="post image" width="100"></td>
         {% endif %}
+        <td>
+            <a href="{{url_for('user', login=post.author.login)}}">{{ post.author.name }}</a> says:<br>
+            <b>{{ post.title }}</b> <br>
+            {{ post.post_text }}
+        </td>
     </tr>
 </table>
