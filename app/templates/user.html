@@ -13,8 +13,16 @@
                 <h1>User: {{ user.name }}</h1>
                 {% if profile.about %}<p>about me: {{ profile.about }}</p>{% endif %}
                 {% if profile.biography %}<p>my biography: {{ profile.biography }}</p>{% endif %}
+                <p>
+                    {{ len(Follows.get_followers(user.id)) }} <a href="{{ url_for('followers', login=user.login) }}">followers</a>,
+                    {{ len(Follows.get_followings(user.id)) }} <a href="{{ url_for('followings', login=user.login) }}">followings.</a>
+                </p>
                 {% if user == current_user %}
                     <p><a href="{{ url_for('edit_profile') }}">Edit your profile</a></p>
+                {% elif not Follows.is_following(current_user.id, user.id) %}
+                    <p><a href="{{ url_for('follow', login=user.login) }}">Follow</a></p>
+                {% else %}
+                    <p><a href="{{ url_for('unfollow', login=user.login) }}">Unfollow</a></p>
                 {% endif %}
             </td>
         </tr>

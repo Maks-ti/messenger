@@ -467,6 +467,50 @@ class Follows(Table):
         '''.format(cls.name, cls.columns[0], follower_id, cls.columns[1], followed_id)
         return _DataBase.execute_query(query)
 
+    @classmethod
+    def is_following(cls, follower_id, followed_id) -> bool:
+        query = '''
+            SELECT * 
+            FROM {}
+            WHERE {} = {}
+            AND {} = {}
+            ;
+        '''.format(cls.name, cls.columns[0], follower_id, cls.columns[1], followed_id)
+        res = _DataBase.select_query(query)
+        if res is None or len(res) == 0:
+            return False
+        return True
+
+    @classmethod
+    def get_followers(cls, user_id: int) -> list[User]:
+        ''' получаем подписчиков user(user_id) '''
+        query = '''
+            SELECT * 
+            FROM {}
+            WHERE {} = {}
+            ;
+        '''.format(cls.name, cls.columns[1], user_id)
+        res = _DataBase.select_query(query)
+        if res is None or len(res) == 0:
+            return []
+        res = list(map(lambda x: Users.get_by_id(x[0]), res))
+        return res
+
+    @classmethod
+    def get_followings(cls, user_id: int) -> list[User]:
+        ''' получаем подписки user(user_id) '''
+        query = '''
+            SELECT * 
+            FROM {}
+            WHERE {} = {}
+            ;
+        '''.format(cls.name, cls.columns[0], user_id)
+        res = _DataBase.select_query(query)
+        if res is None or len(res) == 0:
+            return []
+        res = list(map(lambda x: Users.get_by_id(x[1]), res))
+        return res
+
 
 class Chats(Table):
     '''

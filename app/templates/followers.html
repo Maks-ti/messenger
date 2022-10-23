@@ -1,0 +1,10 @@
+
+{% extends "base.html" %}
+
+{% block content %}
+<ul>
+    {% for follower in followers %}
+        <li>{{ follower.name }}</li>
+    {% endfor %}
+</ul>
+{% endblock %}

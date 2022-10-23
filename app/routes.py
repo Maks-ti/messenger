@@ -104,7 +104,7 @@ def user(login):
     profile: Profile = Profiles.get_by_id(user.id)
     if profile is None:
         profile = Profile(user.id)
-    return render_template('user.html', user=user, posts=posts, profile=profile)
+    return render_template('user.html', user=user, posts=posts, profile=profile, Follows=Follows, len=len)
 
 
 @app.route('/edit_profile', methods=['GET', 'POST'])
@@ -137,6 +137,58 @@ def edit_profile():
         form.about.data = profile.about
         form.biography.data = profile.biography
     return render_template('edit_profile.html', title='Edit Profile', form=form)
+
+
+@app.route('/follow/<login>')
+@login_required
+def follow(login):
+    user: User = Users.get_by_login(login)
+    if user is None:
+        flash('User {} not found.'.format(login))
+        return redirect(url_for('index'))
+    if user == current_user:
+        flash('You cannot follow yourself!')
+        return redirect(url_for('user', login=login))
+    # добавляем подписку на User`а
+    Follows.add(current_user.id, user.id)
+    flash('You are following {} !'.format(login))
+    return redirect(url_for('user', login=login))
+
+
+@app.route('/unfollow/<login>')
+@login_required
+def unfollow(login):
+    user: User = Users.get_by_login(login)
+    if user is None:
+        flash('User {} not found.'.format(login))
+        return redirect(url_for('index'))
+    if user == current_user:
+        flash('You cannot unfollow yourself!')
+        return redirect(url_for('user', login=login))
+    Follows.delete(current_user.id, user.id)
+    flash('You are not following {}.'.format(login))
+    return redirect(url_for('user', login=login))
+
+
+@app.route('/followers/<login>')
+@login_required
+def followers(login):
+    user: User = Users.get_by_login(login)
+    if user is None:
+        return redirect(url_for('index'))
+    followers = Follows.get_followers(user.id)
+    return render_template('followers.html', followers=followers)
+
+
+@app.route('/followings/<login>')
+@login_required
+def followings(login):
+    user: User = Users.get_by_login(login)
+    if user is None:
+        return redirect(url_for('index'))
+    followings = Follows.get_followings(user.id)
+    return render_template('followings.html', followings=followings)
+
 
 
 #chcp 1251
