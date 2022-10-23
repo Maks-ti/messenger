@@ -83,6 +83,9 @@ post_text TEXT NOT NULL,
 image BYTEA
 );
 
+ALTER TABLE post
+ALTER COLUMN image SET DATA TYPE VARCHAR(120);
+
 /* таблица описывающая комментарий к посту */
 CREATE TABLE comment (
 id INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY,

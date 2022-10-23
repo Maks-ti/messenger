@@ -2,7 +2,34 @@
 
 {% block content %}
     <h1>Hi, {{ current_user.name }}!</h1>
+
+    <form action="" method="post" enctype="multipart/form-data">
+        {{ form.hidden_tag() }}
+        <p>
+            {{ form.title.label }}<br>
+            {{ form.title(cols=32, rows=4) }}<br>
+            {% for error in form.title.errors %}
+                <span style="color: red;">[{{ error }}]</span>
+            {% endfor %}
+        </p>
+        <p>
+            {{ form.post_text.label }}<br>
+            {{ form.post_text(cols=64, rows=5) }}<br>
+            {% for error in form.post_text.errors %}
+                <span style="color: red;">[{{ error }}]</span>
+            {% endfor %}
+        </p>
+        <p>
+            {{ form.image.label }}<br>
+            {{ form.image }}<br>
+            {% for error in form.image.errors %}
+                <span style="color: red;">[{{ error }}]</span>
+            {% endfor %}
+        </p>
+        <p>{{ form.submit() }}</p>
+    </form>
+
     {% for post in posts %}
-    <div><p>{{ post.author.username }} says: <b>{{ post.body }}</b></p></div>
+        {% include '_post.html' %}
     {% endfor %}
 {% endblock %}

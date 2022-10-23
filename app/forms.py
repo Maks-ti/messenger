@@ -39,3 +39,10 @@ class EditProfileForm(FlaskForm):
     submit = SubmitField('Submit')
 
 
+class PostForm(FlaskForm):
+    title = TextAreaField('Post title', validators=[Length(min=1, max=200)])
+    post_text = TextAreaField('Post text', validators=[Length(min=1, max=100000)])
+    image = FileField('Post image', validators=[FileAllowed(['jpg', 'png', 'jpeg'])])
+    submit = SubmitField('Submit')
+
+

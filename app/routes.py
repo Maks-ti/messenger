@@ -3,21 +3,22 @@
 файл функций просмотра (файл представлений)
 '''
 import os
+from datetime import datetime
 
 from flask import render_template, flash, redirect, url_for, request, abort
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.urls import url_parse
 from werkzeug.utils import secure_filename
 from app import app
-from app.forms import LoginForm, RegistrationForm, EditProfileForm
+from app.forms import LoginForm, RegistrationForm, EditProfileForm, PostForm
 # наверноепроще просто заимпортить все модели предваритеьно установив моификаторы доступа rpotected на те которые импортить не надо (или определить функцию импорта)
 from app.models import User, Profile, Chat, Message, Post, Comment
 from app.models import Users, Profiles, Follows, Chats, User_in_chat, Messages, Posts, Comments
 
 
 
-@app.route('/')
-@app.route('/index')
+@app.route('/', methods=['GET', 'POST'])
+@app.route('/index', methods=['GET', 'POST'])
 @login_required
 def index():
     '''
@@ -25,22 +26,23 @@ def index():
     с лентой новостей (из постов юзеров на которых
     текущий юзер подписан
     '''
-    user = {'username': 'maks-ti'}
-    posts = [
-        {
-            'author': {'username': 'John'},
-            'body': 'Beautiful day in Portland!'
-        },
-        {
-            'author': {'username': 'Susan'},
-            'body': 'The Avengers movie was so cool!'
-        },
-        {
-            'author': {'username': 'Ипполит'},
-            'body': 'Какая гадость эта ваша заливная рыба!!'
-        }
-    ] # mock obj
-    return render_template('index.html', title='Home', posts=posts)
+    form = PostForm()
+    if form.validate_on_submit():
+        post = Post(user_id=current_user.id,
+                    title=form.title.data,
+                    post_text=form.post_text.data,
+                    publication_date=datetime.now())
+        file = form.image.data
+        # если файл добавлен, то обновим и его тоже
+        if file is not None and file.filename != '':
+            filename = secure_filename(file.filename)
+            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            post.image = '../static/images/' + filename
+        Posts.add(post)
+        flash('Your post added')
+        return redirect(url_for('index'))
+    posts = Posts.get_followed_posts(current_user.id)
+    return render_template('index.html', form=form, title='Home', posts=posts)
 
 
 @app.route('/login', methods=['GET', 'POST'])

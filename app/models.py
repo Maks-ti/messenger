@@ -172,7 +172,6 @@ class Profile(Entity):
         return False
 
     def avatar(self) -> str:
-        print(self.profile_img)
         if self.profile_img == '' or self.profile_img == NULL() or self.profile_img is None:
             return None
         return self.profile_img
@@ -235,7 +234,7 @@ class Post(Entity):
                  publication_date: datetime = datetime.now(),
                  last_edit_date: datetime = datetime.now(),
                  post_text: str = '',
-                 image: object = NULL()):
+                 image: str = ''):
         self.id = id
         self.user_id = user_id
         self.title = title
@@ -618,6 +617,33 @@ class Posts(Table):
         FROM {}
         WHERE user_id = {}
         '''.format(cls.name, user_id)
+        res = _DataBase.select_query(query)
+        if res is None or len(res) == 0:
+            return None
+        res = list(map(lambda x: Post(*x), res))
+        return res
+
+    @classmethod
+    def get_followed_posts(cls, user_id: int) -> list[Post]:
+        '''SELECT post_params
+            FROM post join follows
+            ON user_id = followed_id
+            WHERE follower_id = current_user_id
+            order by publication_date DESC'''
+        query = '''
+        SELECT {}
+        FROM {} INNER JOIN {} 
+        ON {} = {}
+        WHERE {} = {}
+        ORDER BY {} DESC
+        '''.format('id, ' + ', '.join(cls.columns),
+                   cls.name,
+                   Follows.name,
+                   cls.columns[0],
+                   Follows.columns[1],
+                   Follows.columns[0],
+                   user_id,
+                   cls.columns[2])
         res = _DataBase.select_query(query)
         if res is None or len(res) == 0:
             return None

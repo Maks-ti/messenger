@@ -1,11 +1,13 @@
 
 <table>
     <tr valign="top">
-        <td><img src=""></td>
         <td>
             {{ post.author.name }} says:<br>
             <b>{{ post.title }}</b> <br>
             {{ post.post_text }}
         </td>
+        {% if post.image %}
+        <td><img src="{{post.image}}" alt="post image" width="100"></td>
+        {% endif %}
     </tr>
 </table>
