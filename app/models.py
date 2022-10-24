@@ -232,7 +232,7 @@ class Post(Entity):
                  user_id: int = 0,
                  title: str = '',
                  publication_date: datetime = datetime.now(),
-                 last_edit_date: datetime = datetime.now(),
+                 last_edit_date: datetime = NULL(),
                  post_text: str = '',
                  image: str = ''):
         self.id = id
@@ -246,10 +246,15 @@ class Post(Entity):
         self.author: User = Users.get_by_id(user_id)
 
     def tup(self) -> tuple:
+        last_edit_date: str
+        if self.last_edit_date == NULL():
+            last_edit_date = NULL()
+        else:
+            last_edit_date = str(self.last_edit_date)
         return (self.user_id,
                 self.title,
                 str(self.publication_date),
-                str(self.last_edit_date),
+                last_edit_date,
                 self.post_text,
                 self.image,)
 
@@ -616,7 +621,8 @@ class Posts(Table):
         SELECT *
         FROM {}
         WHERE user_id = {}
-        '''.format(cls.name, user_id)
+        ORDER BY {} DESC
+        '''.format(cls.name, user_id, cls.columns[2])
         res = _DataBase.select_query(query)
         if res is None or len(res) == 0:
             return None
@@ -655,7 +661,8 @@ class Posts(Table):
         query = '''
         SELECT *
         FROM {}
-        '''.format(cls.name)
+        ORDER BY {} DESC
+        '''.format(cls.name, cls.columns[2])
         res = _DataBase.select_query(query)
         if res is None or len(res) == 0:
             return None
