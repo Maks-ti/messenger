@@ -669,6 +669,35 @@ class Posts(Table):
         res = list(map(lambda x: Post(*x), res))
         return res
 
+    @classmethod
+    def get_post_by_id(cls, id: int) -> Post:
+        query = '''
+        SELECT * 
+        FROM {}
+        WHERE id = {}
+        '''.format(cls.name, id)
+        res = _DataBase.select_query(query)
+        if res is None or len(res) == 0:
+            return None
+        res = res[0]
+        return Post(*res)
+
+    @classmethod
+    def update(cls, post) -> bool:
+        query = '''
+        UPDATE {}
+        SET 
+        title = '{}' ,
+        post_text = '{}' ,
+        last_edit_date = '{}'
+        WHERE id = {}
+        '''.format(cls.name,
+                   post.title,
+                   post.post_text,
+                   str(post.last_edit_date),
+                   post.id)
+        return _DataBase.execute_query(query)
+
 
 class Comments(Table):
     '''

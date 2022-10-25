@@ -47,6 +47,9 @@ counter INTEGER NOT NULL DEFAULT 0,
 image BYTEA DEFAULT NULL
 );
 
+ALTER TABLE chat
+ALTER COLUMN image SET DATA TYPE VARCHAR(120);
+
 /* таблица реализующая связь многие ко многим для chat и user */
 CREATE TABLE user_in_chat(
 user_id INTEGER,

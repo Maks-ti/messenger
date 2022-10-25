@@ -5,12 +5,15 @@
         <td><img src="{{post.image}}" alt="post image" width="100"></td>
         {% endif %}
         <td>
-            <a href="{{url_for('user', login=post.author.login)}}">{{ post.author.name }}</a> says:<br>
+            <a href="{{ url_for('user', login=post.author.login) }}">{{ post.author.name }}</a> says:<br>
             <b>{{ post.title }}</b> <br>
             {{ post.post_text }}<br>
             Publication date: {{ post.publication_date }}
             {% if post.last_edit_date %}
             <br> Last edit date: {{ post.last_edit_date }}
+            {% endif %}
+            {% if current_user.id == post.user_id %}
+            <br><a href="{{ url_for('edit_post', post_id=post.id) }}">Edit post</a>
             {% endif %}
         </td>
     </tr>

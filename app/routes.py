@@ -212,6 +212,53 @@ def explore():
     return render_template('index.html', posts=posts)
 
 
+@app.route('/edit_post/<post_id>', methods=['GET', 'POST'])
+@login_required
+def edit_post(post_id):
+    post = Posts.get_post_by_id(post_id)
+    if post is None:
+        abort(404)
+    # если юзер попытался вбить url и исправить чужой пост
+    if post.author.id != current_user.id:
+        abort(404)
+    # если всё ок, то заполним форму тем что было и отрисуем страницу
+    form = PostForm()
+    if form.validate_on_submit():
+        post = Post(id=post_id,
+                    user_id=current_user.id,
+                    title=form.title.data,
+                    post_text=form.post_text.data,
+                    publication_date=post.publication_date,
+                    last_edit_date=datetime.now())
+        file = form.image.data
+        # если файл добавлен, то обновим и его тоже
+        if file is not None and file.filename != '':
+            filename = secure_filename(file.filename)
+            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            post.image = '../static/images/' + filename
+        Posts.update(post)
+        flash('Your post updated')
+        return redirect(url_for('user', login=current_user.login))
+    elif request.method == 'GET':
+        form.title.data = post.title
+        form.post_text.data = post.post_text
+    return render_template('edit_post.html', title='Edit post', form=form)
+
+
+@app.route('/write/<login>')
+@login_required
+def write(login):
+    user: User = Users.get_by_login(login)
+    if user is None:
+        flash('User {} not found.'.format(login))
+        return redirect(url_for('index'))
+    if user == current_user:
+        flash('You can`t write to yourself')
+        return redirect(url_for('index'))
+    
+
+
+
 
 
 
