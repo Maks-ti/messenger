@@ -100,6 +100,25 @@ class _DataBase(object):
         return None
 
 
+    @classmethod
+    def insert_returning(cls, query: str) -> object:
+        if cls._connection is None:
+            cls._connect()
+        cls._connection.autocommit = True
+        cursor = cls._connection.cursor()
+        try:
+            cursor.execute(query)
+            result = cursor.fetchone()
+        except psycopg2.OperationalError as ex:
+            print(f'the operational error:\n{ex}')
+        except BaseException as ex:
+            print(f'the error:\n{ex}')
+        else:
+            print('the insert returning query is successfully')
+            return result
+        return None
+
+
 ''' //---//---//---// ENTITIES //---//---//---// '''
 class Entity(ABC):
     @abstractmethod
@@ -185,7 +204,7 @@ class Chat(Entity):
                  id: int = 0,
                  name: str = '',
                  counter: int = 0,
-                 image: object = NULL()):
+                 image: str = NULL()):
         self.id = id
         self.name = name
         self.counter = counter
@@ -221,6 +240,9 @@ class Message(Entity):
                 self.parent_id,
                 self.mes_text,
                 self.sends_time,)
+
+    def __repr__(self):
+        return f'<Message {self.id}>'
 
 
 class Post(Entity):
@@ -529,14 +551,53 @@ class Chats(Table):
     ]
 
     @classmethod
-    def add(cls, chat: Chat) -> bool:
-        query = cls._insert_query.format(cls.name, ', '.join(cls.columns), chat.tup())
-        return _DataBase.execute_query(query)
+    def add(cls, chat: Chat) -> int:
+        query = '''
+        INSERT INTO {}
+        ( {} )
+        VALUES
+        {}
+        RETURNING id
+        ;
+        '''.format(cls.name, ', '.join(cls.columns), chat.tup())
+        res = _DataBase.insert_returning(query)
+        if res is None or len(res) == 0:
+            return None
+        return res[0]
+
 
     @classmethod
     def delete(cls, id: int) -> bool:
         query = cls._delete_query.format(cls.name, id)
         return _DataBase.execute_query(query)
+
+    @classmethod
+    def get_chats_with_2_users(cls, current_user_id: int, other_user_id: int) -> list[Chat]:
+        '''поиск общих чатов для двух пользователей'''
+        query = '''
+        SELECT id, name, counter, image 
+        FROM user_in_chat AS usch INNER JOIN user_in_chat AS usch2
+        ON usch.chat_id = usch2.chat_id AND usch.user_id = {} AND usch2.user_id = {}
+        INNER JOIN chat ON usch.chat_id = chat.id
+        '''.format(current_user_id, other_user_id)
+        res = _DataBase.select_query(query)
+        if res is None or len(res) == 0:
+            return None
+        res = list(map(lambda x: Chat(*x), res))
+        return res
+
+    @classmethod
+    def get_chat_by_id(cls, chat_id: int) -> Chat:
+        query = '''
+        SELECT * 
+        FROM {}
+        WHERE id = {}
+        '''.format(cls.name, chat_id)
+        res = _DataBase.select_query(query)
+        if res is None or len(res) == 0:
+            return None
+        res = res[0]
+        return Chat(*res)
 
 
 class User_in_chat(Table):
@@ -564,6 +625,19 @@ class User_in_chat(Table):
         '''.format(cls.name, cls.columns[0], user_id, cls.columns[1], chat_id)
         return _DataBase.execute_query(query)
 
+    @classmethod
+    def is_user_in_chat(cls, chat_id: int, user_id: int) -> bool:
+        query = '''
+        SELECT * 
+        FROM {}
+        WHERE chat_id = {} 
+        AND user_id = {}
+        '''.format(cls.name, chat_id, user_id)
+        res = _DataBase.select_query(query)
+        if res is None or len(res) == 0:
+            return False
+        return True
+
 
 class Messages(Table):
     '''
@@ -588,6 +662,19 @@ class Messages(Table):
     def delete(cls, id: int) -> bool:
         query = cls._delete_query.format(cls.name, id)
         return _DataBase.execute_query(query)
+
+    @classmethod
+    def get_messages_by_chat_id(cls, chat_id) -> list[Message]:
+        query = '''
+        SELECT *
+        FROM {}
+        WHERE chat_id = {}
+        '''.format(cls.name, chat_id)
+        res = _DataBase.select_query(query)
+        if res is None or len(res) == 0:
+            return None
+        res = list(map(lambda x: Message(*x), res))
+        return res
 
 
 class Posts(Table):

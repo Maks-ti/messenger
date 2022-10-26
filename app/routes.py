@@ -10,7 +10,7 @@ from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.urls import url_parse
 from werkzeug.utils import secure_filename
 from app import app
-from app.forms import LoginForm, RegistrationForm, EditProfileForm, PostForm
+from app.forms import LoginForm, RegistrationForm, EditProfileForm, PostForm, MessageForm
 # наверноепроще просто заимпортить все модели предваритеьно установив моификаторы доступа rpotected на те которые импортить не надо (или определить функцию импорта)
 from app.models import User, Profile, Chat, Message, Post, Comment
 from app.models import Users, Profiles, Follows, Chats, User_in_chat, Messages, Posts, Comments
@@ -126,7 +126,7 @@ def edit_profile():
         biography = form.biography.data
         profile = Profiles.get_by_id(current_user.id)
         if profile is None:
-            profile = Profile(id = current_user.id)
+            profile = Profile(id=current_user.id)
         profile.about = about
         profile.biography = biography
         file = form.image.data
@@ -248,15 +248,73 @@ def edit_post(post_id):
 @app.route('/write/<login>')
 @login_required
 def write(login):
+    ''' метод занимается перенаправлением юзера в нужный чат
+     при необходимости чат создаётся и юзеры в него добавляется '''
     user: User = Users.get_by_login(login)
     if user is None:
         flash('User {} not found.'.format(login))
         return redirect(url_for('index'))
-    if user == current_user:
+    if user.id == current_user.id:
         flash('You can`t write to yourself')
         return redirect(url_for('index'))
-    
+    chats = Chats.get_chats_with_2_users(current_user.id, user.id)
+    print(chats)
+    if chats is None:
+        # создаём новый чат и перенаправляем юзера туда
+        chat_name = current_user.name + " and " + user.name
+        chat = Chat(name=chat_name)
+        # создаём чат и получаем его id
+        chat_id = Chats.add(chat)
+        print(f'chat id = {chat_id}')
+        # если есть проблемы создания (проблемы базы) вызовем ошибку
+        if chat_id is None:
+            abort(500)
+        # добавляем юзеров в созданный чат
+        User_in_chat.add(current_user.id, chat_id)
+        User_in_chat.add(user.id, chat_id)
+    else:
+        # берём первый чат и перенаправляем юзера туда
+        chat = chats[0]
+        chat_id = chat.id
+    return redirect(url_for('chat', chat_id=chat_id, parent_id=None))
 
+@app.route('/chat/<chat_id>', methods=['GET', 'POST'])
+@app.route('/chat/<chat_id>/<parent_id>', methods=['GET', 'POST'])
+@login_required
+def chat(chat_id, parent_id=None):
+    if parent_id is not None:
+        parent_id = int(parent_id)
+    chat = Chats.get_chat_by_id(chat_id)
+    # если чат е сущестует
+    if chat is None:
+        abort(404)
+    # если юзера нет в этом чате
+    if not User_in_chat.is_user_in_chat(chat_id, current_user.id):
+        abort(404)
+    # форма ввода
+    form = MessageForm()
+    if form.validate_on_submit():
+        # формируем сообщение
+        message = Message(chat_id=chat_id,
+                          user_id=current_user.id,
+                          mes_text=form.text.data,
+                          sends_time=str(datetime.now()))
+        form.text.data = None
+        if parent_id is not None:
+            message.parent_id = parent_id
+        Messages.add(message)
+        return redirect(url_for('chat', chat_id=chat_id, parent_id=None))
+    # получаем дерево сообщений
+    messages = Messages.get_messages_by_chat_id(chat_id)
+    if messages is None:
+        messages = []
+    else:
+        # если список есть его необходимо правильно упорядочить
+        # по хорошему написать структуры tree
+        # или просто написать алгоритм построения дерева сообщений (+ обновить отображение сообщений в шаблонах)
+        # TODO
+        pass
+    return render_template('chat.html', title='chat', chat=chat, form=form, messages=messages, parent_id=parent_id)
 
 
 
