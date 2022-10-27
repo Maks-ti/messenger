@@ -233,6 +233,11 @@ class Message(Entity):
         self.parent_id = parent_id
         self.mes_text = mes_text
         self.sends_time = sends_time
+        # поле не относящееся к бд
+        # необходимо для формирования дерева сообщений (если оно формируется)
+        self.child_list = []
+        # глубина сообщения в дереве
+        self.depth = 0
 
     def tup(self) -> tuple:
         return (self.chat_id,

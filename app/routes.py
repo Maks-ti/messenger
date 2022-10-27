@@ -278,6 +278,7 @@ def write(login):
         chat_id = chat.id
     return redirect(url_for('chat', chat_id=chat_id, parent_id=None))
 
+
 @app.route('/chat/<chat_id>', methods=['GET', 'POST'])
 @app.route('/chat/<chat_id>/<parent_id>', methods=['GET', 'POST'])
 @login_required
@@ -309,12 +310,28 @@ def chat(chat_id, parent_id=None):
     if messages is None:
         messages = []
     else:
-        # если список есть его необходимо правильно упорядочить
-        # по хорошему написать структуры tree
-        # или просто написать алгоритм построения дерева сообщений (+ обновить отображение сообщений в шаблонах)
-        # TODO
-        pass
+        messages = create_tree(messages)
     return render_template('chat.html', title='chat', chat=chat, form=form, messages=messages, parent_id=parent_id)
+
+def create_tree(all_messages: list[Message]) -> list:
+    # сдоварь для упорядочивания записей (каждому parent_id соответствует список дочерних сообщений)
+    sorter = dict()
+    for mes in all_messages:
+        if mes.parent_id not in sorter:
+            sorter[mes.parent_id] = []
+        sorter[mes.parent_id].append(mes)
+    # формирование дерева (теперь преобразуем словарь в дерево из списокв)
+    res = sorter[None]
+    form_list(res, sorter, 0)
+    return res
+
+
+def form_list(lst: list[Message], sorter: dict, depth: int):
+    for mes in lst:
+        if mes.id in sorter:
+            mes.child_list = sorter[mes.id]
+        mes.depth = depth
+        form_list(mes.child_list, sorter, depth+1)
 
 
 

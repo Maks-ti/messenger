@@ -1,7 +1,10 @@
 
+<div style="margin-left:{{ 20*message.depth }}px">
 <p>
     {{ message.mes_text }}<br>
-    <a href="{{url_for('chat', chat_id=chat.id, parent_id=message.id)}}">Answer</a>
+    {% if message.id != parent_id %}
+        <a href="{{url_for('chat', chat_id=chat.id, parent_id=message.id)}}">Answer</a>
+    {% endif %}
     {% if message.id == parent_id %}
         <form action="" method="post">
             {{ form.hidden_tag() }}
@@ -15,4 +18,9 @@
             <p>{{ form.submit() }}</p>
         </form>
     {% endif %}
+
+    {% for message in message.child_list %}
+        {% include '_message.html' %}
+    {% endfor %}
 </p>
+</div>
