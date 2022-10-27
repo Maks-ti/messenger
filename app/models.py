@@ -674,6 +674,7 @@ class Messages(Table):
         SELECT *
         FROM {}
         WHERE chat_id = {}
+        ORDER BY sends_time
         '''.format(cls.name, chat_id)
         res = _DataBase.select_query(query)
         if res is None or len(res) == 0:
