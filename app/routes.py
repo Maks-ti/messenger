@@ -10,7 +10,7 @@ from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.urls import url_parse
 from werkzeug.utils import secure_filename
 from app import app
-from app.forms import LoginForm, RegistrationForm, EditProfileForm, PostForm, MessageForm
+from app.forms import LoginForm, RegistrationForm, EditProfileForm, PostForm, MessageForm, CommentForm
 # наверноепроще просто заимпортить все модели предваритеьно установив моификаторы доступа rpotected на те которые импортить не надо (или определить функцию импорта)
 from app.models import User, Profile, Chat, Message, Post, Comment
 from app.models import Users, Profiles, Follows, Chats, User_in_chat, Messages, Posts, Comments
@@ -245,6 +245,26 @@ def edit_post(post_id):
     return render_template('edit_post.html', title='Edit post', form=form)
 
 
+@app.route('/comment/<post_id>', methods=['GET', 'POST'])
+@login_required
+def comment(post_id):
+    post = Posts.get_post_by_id(post_id)
+    if post is None:
+        abort(404)
+    post.comments = Comments.get_comments_by_post_id(post_id)
+    form = CommentForm()
+    if form.validate_on_submit():
+        # формируем коммент
+        comment = Comment(0,
+                          post_id,
+                          current_user.id,
+                          form.text.data,
+                          datetime.now())
+        Comments.add(comment)
+        return redirect(url_for('comment', post_id=post_id))
+    return render_template('comment.html', form=form, post=post, answer_id=post_id)
+
+
 @app.route('/write/<login>')
 @login_required
 def write(login):
@@ -300,7 +320,6 @@ def chat(chat_id, parent_id=None):
                           user_id=current_user.id,
                           mes_text=form.text.data,
                           sends_time=str(datetime.now()))
-        form.text.data = None
         if parent_id is not None:
             message.parent_id = parent_id
         Messages.add(message)
@@ -312,6 +331,7 @@ def chat(chat_id, parent_id=None):
     else:
         messages = create_tree(messages)
     return render_template('chat.html', title='chat', chat=chat, form=form, messages=messages, parent_id=parent_id)
+
 
 def create_tree(all_messages: list[Message]) -> list:
     # сдоварь для упорядочивания записей (каждому parent_id соответствует список дочерних сообщений)
@@ -332,6 +352,17 @@ def form_list(lst: list[Message], sorter: dict, depth: int):
             mes.child_list = sorter[mes.id]
         mes.depth = depth
         form_list(mes.child_list, sorter, depth+1)
+
+
+@app.route('/chats')
+@login_required
+def chats():
+    chats: list[Chat] = User_in_chat.get_users_chats(current_user.id)
+    if chats is None:
+        chats = []
+    return render_template('chats.html', chats=chats)
+
+
 
 
 

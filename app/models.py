@@ -238,6 +238,9 @@ class Message(Entity):
         self.child_list = []
         # глубина сообщения в дереве
         self.depth = 0
+        # автор сообщения
+        self.author: User = Users.get_by_id(self.user_id)
+
 
     def tup(self) -> tuple:
         return (self.chat_id,
@@ -269,8 +272,11 @@ class Post(Entity):
         self.last_edit_date = last_edit_date
         self.post_text = post_text
         self.image = image
-        # автор поста User не храниться в базе (однако является очень удобной связкой для представления поста в шаблонах)
+        # автор поста User (данные о нём непосредственно в запросе не получаются)
         self.author: User = Users.get_by_id(user_id)
+        # коменты опять же получаем отдельно
+        self.comments = None
+
 
     def tup(self) -> tuple:
         last_edit_date: str
@@ -297,20 +303,20 @@ class Comment(Entity):
                  id: int = 0,
                  post_id: int = 0,
                  commentator_id: int = 0,
-                 parent_id: int = NULL(),
                  comment_text: str = '',
                  sends_time: datetime = datetime.now()):
         self.id = id
         self.post_id = post_id
         self.commentator_id = commentator_id
-        self.parent_id = parent_id
         self.comment_text = comment_text
         self.sends_time = sends_time
+        # автор коммента
+        self.author: User = Users.get_by_id(self.commentator_id)
+
 
     def tup(self) -> tuple:
         return (self.post_id,
                 self.commentator_id,
-                self.parent_id,
                 self.comment_text,
                 str(self.sends_time),)
 
@@ -643,6 +649,20 @@ class User_in_chat(Table):
             return False
         return True
 
+    @classmethod
+    def get_users_chats(cls, user_id: int) -> list[Chat]:
+        query = '''
+        SELECT DISTINCT {}
+        FROM user_in_chat JOIN chat 
+        ON user_in_chat.chat_id = chat.id
+        WHERE user_in_chat.user_id = {}
+        '''.format('id, '+', '.join(Chats.columns), user_id)
+        res = _DataBase.select_query(query)
+        if res is None or len(res) == 0:
+            return None
+        res = list(map(lambda x: Chat(*x), res))
+        return res
+
 
 class Messages(Table):
     '''
@@ -801,7 +821,6 @@ class Comments(Table):
     columns = [
         'post_id',
         'commentator_id',
-        'parent_id',
         'comment_text',
         'sends_time',
     ]
@@ -815,6 +834,19 @@ class Comments(Table):
     def delete(cls, id: int) -> bool:
         query = cls._delete_query.format(cls.name, id)
         return _DataBase.execute_query(query)
+
+    @classmethod
+    def get_comments_by_post_id(cls, post_id: int):
+        query = '''
+        SELECT *
+        FROM {}
+        WHERE post_id = {}
+        '''.format(cls.name, post_id)
+        res = _DataBase.select_query(query)
+        if res is None or len(res) == 0:
+            return None
+        res = list(map(lambda x: Comment(*x), res))
+        return res
 
 
 

@@ -4,7 +4,9 @@
 {% block content %}
 <ul>
     {% for follower in followers %}
-        <li>{{ follower.name }}</li>
+        <li>
+            <a href="{{ url_for('user', login=follower.login) }}">{{ follower.name }}</a>
+        </li>
     {% endfor %}
 </ul>
 {% endblock %}

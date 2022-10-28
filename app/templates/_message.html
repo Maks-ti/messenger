@@ -1,7 +1,9 @@
 
 <div style="margin-left:{{ 20*message.depth }}px">
 <p>
+    {{ message.author.name }}<br>
     {{ message.mes_text }}<br>
+    {{ message.sends_time }}<br>
     {% if message.id != parent_id %}
         <a href="{{url_for('chat', chat_id=chat.id, parent_id=message.id)}}">Answer</a>
     {% endif %}

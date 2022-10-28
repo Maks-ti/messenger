@@ -15,6 +15,22 @@
             {% if current_user.id == post.user_id %}
             <br><a href="{{ url_for('edit_post', post_id=post.id) }}">Edit post</a>
             {% endif %}
+
+            {% if not answer_id %}
+            <br><a href="{{ url_for( 'comment', post_id=post.id) }}">Comment</a>
+            {% endif %}
+
+            {% if post.comments %}
+                {% for comment in post.comments %}
+                    <div style="margin-left:45px">
+                        <p>
+                            {{ comment.author.name }}<br>
+                            {{ comment.comment_text }}<br>
+                            {{ comment.sends_time }}
+                        </p>
+                    </div>
+                {% endfor %}
+            {% endif %}
         </td>
     </tr>
 </table>

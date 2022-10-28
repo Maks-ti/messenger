@@ -99,6 +99,9 @@ comment_text TEXT NOT NULL,
 sends_time TIMESTAMP NOT NULL
 );
 
+ALTER TABLE comment
+DROP COLUMN parent_id;
+
 /* --- --- --- функции и триггеры --- --- --- */
 
 CREATE FUNCTION counter_updater() RETURNS trigger AS $counter_updater$
