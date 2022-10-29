@@ -2,9 +2,10 @@
 <!-- шаблон страницы пользователя, наследуется от base.html -->
 
 {% extends "base.html" %}
+{% import 'bootstrap/wtf.html' as wtf %}
 
-{% block content %}
-    <table>
+{% block app_content %}
+    <table class="table table-hover">
         <tr>
             {% if profile.avatar() %}
             <td><img src ="{{ profile.avatar() }}" alt="avatar" width="150" ></td>
@@ -28,31 +29,7 @@
             </td>
             {% if form %}
             <td>
-                <form action="" method="post" enctype="multipart/form-data">
-                    {{ form.hidden_tag() }}
-                    <p>
-                        {{ form.title.label }}<br>
-                        {{ form.title(cols=32, rows=4) }}<br>
-                        {% for error in form.title.errors %}
-                            <span style="color: red;">[{{ error }}]</span>
-                        {% endfor %}
-                    </p>
-                    <p>
-                        {{ form.post_text.label }}<br>
-                        {{ form.post_text(cols=64, rows=5) }}<br>
-                        {% for error in form.post_text.errors %}
-                            <span style="color: red;">[{{ error }}]</span>
-                        {% endfor %}
-                    </p>
-                    <p>
-                        {{ form.image.label }}<br>
-                        {{ form.image }}<br>
-                        {% for error in form.image.errors %}
-                            <span style="color: red;">[{{ error }}]</span>
-                        {% endfor %}
-                    </p>
-                    <p>{{ form.submit() }}</p>
-                </form>
+                {{ wtf.quick_form(form) }}
             </td>
             {% endif %}
         </tr>

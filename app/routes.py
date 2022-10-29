@@ -207,6 +207,9 @@ def followings(login):
 @app.route('/explore/<keyword>', methods=['GET', 'POST'])
 @login_required
 def explore(keyword=None):
+    form = SearchForm()
+    if form.validate_on_submit():
+        return redirect(url_for('explore', keyword=form.text.data))
     posts: list[Post]
     users: list[User] = None
     if keyword is None:
@@ -216,9 +219,6 @@ def explore(keyword=None):
         if posts is None:
             posts = []
         users = Users.search_by_text(keyword)
-    form = SearchForm()
-    if form.validate_on_submit():
-        return redirect(url_for('explore', keyword=form.text.data))
     return render_template('explore.html', form=form, posts=posts, users=users)
 
 

@@ -8,17 +8,7 @@
         <a href="{{url_for('chat', chat_id=chat.id, parent_id=message.id)}}">Answer</a>
     {% endif %}
     {% if message.id == parent_id %}
-        <form action="" method="post">
-            {{ form.hidden_tag() }}
-            <p>
-                {{ form.text.label }}<br>
-                {{ form.text(cols=32, rows=4) }}<br>
-                {% for error in form.text.errors %}
-                    <span style="color: red;">[{{ error }}]</span>
-                {% endfor %}
-            </p>
-            <p>{{ form.submit() }}</p>
-        </form>
+    {{ wtf.quick_form(form) }}
     {% endif %}
 
     {% for message in message.child_list %}
