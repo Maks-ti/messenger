@@ -10,7 +10,7 @@ from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.urls import url_parse
 from werkzeug.utils import secure_filename
 from app import app
-from app.forms import LoginForm, RegistrationForm, EditProfileForm, PostForm, MessageForm, CommentForm
+from app.forms import LoginForm, RegistrationForm, EditProfileForm, PostForm, MessageForm, CommentForm, SearchForm
 # наверноепроще просто заимпортить все модели предваритеьно установив моификаторы доступа rpotected на те которые импортить не надо (или определить функцию импорта)
 from app.models import User, Profile, Chat, Message, Post, Comment
 from app.models import Users, Profiles, Follows, Chats, User_in_chat, Messages, Posts, Comments
@@ -203,13 +203,23 @@ def followings(login):
     return render_template('followings.html', followings=followings)
 
 
-@app.route('/explore')
+@app.route('/explore', methods=['GET', 'POST'])
+@app.route('/explore/<keyword>', methods=['GET', 'POST'])
 @login_required
-def explore():
-    posts: list[Posts] = Posts.get_all_posts()
-    if posts is None:
-        posts = []
-    return render_template('index.html', posts=posts)
+def explore(keyword=None):
+    posts: list[Post]
+    users: list[User] = None
+    if keyword is None:
+        posts = Posts.get_all_posts()
+    else:
+        posts = Posts.search_by_text(keyword)
+        if posts is None:
+            posts = []
+        users = Users.search_by_text(keyword)
+    form = SearchForm()
+    if form.validate_on_submit():
+        return redirect(url_for('explore', keyword=form.text.data))
+    return render_template('explore.html', form=form, posts=posts, users=users)
 
 
 @app.route('/edit_post/<post_id>', methods=['GET', 'POST'])

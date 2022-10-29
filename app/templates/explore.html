@@ -1,0 +1,34 @@
+
+{% extends "base.html" %}
+
+{% block content %}
+
+<form action="" method="post" novalidate>
+    {{ form.hidden_tag()}}
+    <p>
+        {{ form.text.label }} <br>
+        {{ form.text(size=32) }}<br>
+        {% for error in form.text.errors %}
+        <span style="color: red;">[{{ error }}]</span>
+        {% endfor %}
+    </p>
+    <p>{{form.submit() }}</p>
+</form>
+
+{% if users %}
+    <h2>Users:</h2>
+    {% for user in users %}
+        <p>
+            <a href="{{ url_for('user', login=user.login) }}">{{ user.name }}</a><br>
+        </p>
+    {% endfor %}
+{% endif %}
+
+{% if posts %}
+    <h2>Posts:</h2>
+    {% for post in posts %}
+        {% include '_post.html' %}
+    {% endfor %}
+{% endif %}
+
+{% endblock %}

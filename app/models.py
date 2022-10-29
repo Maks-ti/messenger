@@ -420,6 +420,22 @@ class Users(Table):
         ;'''.format(cls.name, name, user_id)
         return _DataBase.execute_query(query)
 
+    @classmethod
+    def search_by_text(cls, text: str) -> list[User]:
+        ''' поиск пользователей с удовлетворяющим
+         именем или логином '''
+        query = '''
+        SELECT * 
+        FROM {}
+        WHERE name LIKE '%{}%'
+        OR login LIKE '%{}%'
+        '''.format(cls.name, text, text)
+        res = _DataBase.select_query(query)
+        if res is None or len(res) == 0:
+            return None
+        res = list(map(lambda x: User(*x), res))
+        return res
+
 
 class Profiles(Table):
     '''
@@ -810,6 +826,20 @@ class Posts(Table):
                    str(post.last_edit_date),
                    post.id)
         return _DataBase.execute_query(query)
+
+    @classmethod
+    def search_by_text(cls, text: str) -> list[Post]:
+        ''' поиск всех постов с удовлетворяющим заголовком '''
+        query = '''
+        SELECT *
+        FROM {}
+        WHERE title LIKE '%{}%'
+        '''.format(cls.name, text)
+        res = _DataBase.select_query(query)
+        if res is None or len(res) == 0:
+            return None
+        res = list(map(lambda x: Post(*x), res))
+        return res
 
 
 class Comments(Table):
