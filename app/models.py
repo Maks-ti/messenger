@@ -4,6 +4,8 @@
 
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
+
+import app
 from app import login
 
 from abc import ABC, abstractmethod
@@ -34,11 +36,11 @@ class _DataBase(object):
     будет реализован метод возвращающий connection - объект соединения с базой,
     который как раз таки будет необходим в методах класса Table и его потоммков
     '''
-    _db_name = 'messenger'
-    _db_user = 'maxti'
-    _user_password = '1Alexandr1'
-    _db_host = 'localhost'
-    _db_port = '5432'
+    _db_name = app.app.config['DB_NAME']
+    _db_user = app.app.config['DB_USER']
+    _user_password = app.app.config['USER_PASSWORD']
+    _db_host = app.app.config['DB_HOST']
+    _db_port = app.app.config['DB_PORT']
 
     _connection: psycopg2 = None
 
