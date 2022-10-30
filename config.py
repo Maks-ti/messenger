@@ -15,3 +15,4 @@ class Config(object):
     USER_PASSWORD = 'a59a9cf68c5b7185da43dbffb132ebe7ce4ae58bf65cf46e4b43a235df7baa86'
     DB_HOST = 'ec2-52-23-131-232.compute-1.amazonaws.com'
     DB_PORT = '5432'
+
