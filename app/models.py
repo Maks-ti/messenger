@@ -28,7 +28,7 @@ class NULL(object):
         return 'null'
 
 
-class _DataBase(object):
+class DataBase(object):
     '''
     класс описывающий базу даннных
     данный клас будет инкапсулировать в себе все необходимые для подключения к базе
@@ -383,12 +383,12 @@ class Users(Table):
     @classmethod
     def add(cls, user: User) -> bool:
         query = cls._insert_query.format(cls.name, ', '.join(cls.columns), user.tup())
-        return _DataBase.execute_query(query)
+        return DataBase.execute_query(query)
 
     @classmethod
     def get_by_id(cls, id: int) -> User:
         query = cls._get_by_id_query.format(cls.name, id)
-        res = _DataBase.select_query(query)
+        res = DataBase.select_query(query)
         if res is None or len(res) == 0:
             return None
         params = res[0]
@@ -402,7 +402,7 @@ class Users(Table):
         WHERE login = '{}'
         ;
         '''.format(cls.name, login)
-        res = _DataBase.select_query(query)
+        res = DataBase.select_query(query)
         if res is None or len(res) == 0:
             return None
         params = res[0]
@@ -411,7 +411,7 @@ class Users(Table):
     @classmethod
     def delete(cls, id: int) -> bool:
         query = cls._delete_query.format(cls.name, id)
-        return _DataBase.execute_query(query)
+        return DataBase.execute_query(query)
 
     @classmethod
     def update_name(cls, user_id: int, name: str) -> bool:
@@ -420,7 +420,7 @@ class Users(Table):
         SET name = '{}'
         WHERE id = {}
         ;'''.format(cls.name, name, user_id)
-        return _DataBase.execute_query(query)
+        return DataBase.execute_query(query)
 
     @classmethod
     def search_by_text(cls, text: str) -> list[User]:
@@ -432,7 +432,7 @@ class Users(Table):
         WHERE name LIKE '%{}%'
         OR login LIKE '%{}%'
         '''.format(cls.name, text, text)
-        res = _DataBase.select_query(query)
+        res = DataBase.select_query(query)
         if res is None or len(res) == 0:
             return None
         res = list(map(lambda x: User(*x), res))
@@ -455,12 +455,12 @@ class Profiles(Table):
     @classmethod
     def add(cls, profile: Profile) -> bool:
         query = cls._insert_query.format(cls.name, ', '.join(cls.columns), profile.tup())
-        return _DataBase.execute_query(query)
+        return DataBase.execute_query(query)
 
     @classmethod
     def delete(cls, id: int) -> bool:
         query = cls._delete_query.format(cls.name, id)
-        return _DataBase.execute_query(query)
+        return DataBase.execute_query(query)
 
     @classmethod
     def get_by_id(cls, id: int) -> Profile:
@@ -469,7 +469,7 @@ class Profiles(Table):
         FROM {}
         WHERE id = {};
         '''.format(cls.name, id)
-        res = _DataBase.select_query(query)
+        res = DataBase.select_query(query)
         if res is None or len(res) == 0:
             return None
         res = res[0]
@@ -493,7 +493,7 @@ class Profiles(Table):
                        new_profile.biography,
                        new_profile.about,
                        new_profile.id)
-        return _DataBase.execute_query(query)
+        return DataBase.execute_query(query)
 
 
 class Follows(Table):
@@ -509,7 +509,7 @@ class Follows(Table):
     @classmethod
     def add(cls, follower_id: int, followed_id: int) -> bool:
         query = cls._insert_query.format(cls.name, ', '.join(cls.columns), (follower_id, followed_id))
-        return _DataBase.execute_query(query)
+        return DataBase.execute_query(query)
 
     @classmethod
     def delete(cls, follower_id: int, followed_id: int) -> bool:
@@ -520,7 +520,7 @@ class Follows(Table):
             AND {} = {}
             ;
         '''.format(cls.name, cls.columns[0], follower_id, cls.columns[1], followed_id)
-        return _DataBase.execute_query(query)
+        return DataBase.execute_query(query)
 
     @classmethod
     def is_following(cls, follower_id, followed_id) -> bool:
@@ -531,7 +531,7 @@ class Follows(Table):
             AND {} = {}
             ;
         '''.format(cls.name, cls.columns[0], follower_id, cls.columns[1], followed_id)
-        res = _DataBase.select_query(query)
+        res = DataBase.select_query(query)
         if res is None or len(res) == 0:
             return False
         return True
@@ -545,7 +545,7 @@ class Follows(Table):
             WHERE {} = {}
             ;
         '''.format(cls.name, cls.columns[1], user_id)
-        res = _DataBase.select_query(query)
+        res = DataBase.select_query(query)
         if res is None or len(res) == 0:
             return []
         res = list(map(lambda x: Users.get_by_id(x[0]), res))
@@ -560,7 +560,7 @@ class Follows(Table):
             WHERE {} = {}
             ;
         '''.format(cls.name, cls.columns[0], user_id)
-        res = _DataBase.select_query(query)
+        res = DataBase.select_query(query)
         if res is None or len(res) == 0:
             return []
         res = list(map(lambda x: Users.get_by_id(x[1]), res))
@@ -589,7 +589,7 @@ class Chats(Table):
         RETURNING id
         ;
         '''.format(cls.name, ', '.join(cls.columns), chat.tup())
-        res = _DataBase.insert_returning(query)
+        res = DataBase.insert_returning(query)
         if res is None or len(res) == 0:
             return None
         return res[0]
@@ -598,7 +598,7 @@ class Chats(Table):
     @classmethod
     def delete(cls, id: int) -> bool:
         query = cls._delete_query.format(cls.name, id)
-        return _DataBase.execute_query(query)
+        return DataBase.execute_query(query)
 
     @classmethod
     def get_chats_with_2_users(cls, current_user_id: int, other_user_id: int) -> list[Chat]:
@@ -609,7 +609,7 @@ class Chats(Table):
         ON usch.chat_id = usch2.chat_id AND usch.user_id = {} AND usch2.user_id = {}
         INNER JOIN chat ON usch.chat_id = chat.id
         '''.format(current_user_id, other_user_id)
-        res = _DataBase.select_query(query)
+        res = DataBase.select_query(query)
         if res is None or len(res) == 0:
             return None
         res = list(map(lambda x: Chat(*x), res))
@@ -622,7 +622,7 @@ class Chats(Table):
         FROM {}
         WHERE id = {}
         '''.format(cls.name, chat_id)
-        res = _DataBase.select_query(query)
+        res = DataBase.select_query(query)
         if res is None or len(res) == 0:
             return None
         res = res[0]
@@ -641,7 +641,7 @@ class User_in_chat(Table):
     @classmethod
     def add(cls, user_id: int, chat_id: int) -> bool:
         query = cls._insert_query.format(cls.name, ', '.join(cls.columns), (user_id, chat_id))
-        return _DataBase.execute_query(query)
+        return DataBase.execute_query(query)
 
     @classmethod
     def delete(cls, user_id: int, chat_id: int) -> bool:
@@ -652,7 +652,7 @@ class User_in_chat(Table):
             AND {} = {}
             ;
         '''.format(cls.name, cls.columns[0], user_id, cls.columns[1], chat_id)
-        return _DataBase.execute_query(query)
+        return DataBase.execute_query(query)
 
     @classmethod
     def is_user_in_chat(cls, chat_id: int, user_id: int) -> bool:
@@ -662,7 +662,7 @@ class User_in_chat(Table):
         WHERE chat_id = {} 
         AND user_id = {}
         '''.format(cls.name, chat_id, user_id)
-        res = _DataBase.select_query(query)
+        res = DataBase.select_query(query)
         if res is None or len(res) == 0:
             return False
         return True
@@ -675,7 +675,7 @@ class User_in_chat(Table):
         ON user_in_chat.chat_id = chat.id
         WHERE user_in_chat.user_id = {}
         '''.format('id, '+', '.join(Chats.columns), user_id)
-        res = _DataBase.select_query(query)
+        res = DataBase.select_query(query)
         if res is None or len(res) == 0:
             return None
         res = list(map(lambda x: Chat(*x), res))
@@ -699,12 +699,12 @@ class Messages(Table):
     @classmethod
     def add(cls, message: Message) -> bool:
         query = cls._insert_query.format(cls.name, ', '.join(cls.columns), message.tup())
-        return _DataBase.execute_query(query)
+        return DataBase.execute_query(query)
 
     @classmethod
     def delete(cls, id: int) -> bool:
         query = cls._delete_query.format(cls.name, id)
-        return _DataBase.execute_query(query)
+        return DataBase.execute_query(query)
 
     @classmethod
     def get_messages_by_chat_id(cls, chat_id) -> list[Message]:
@@ -714,7 +714,7 @@ class Messages(Table):
         WHERE chat_id = {}
         ORDER BY sends_time
         '''.format(cls.name, chat_id)
-        res = _DataBase.select_query(query)
+        res = DataBase.select_query(query)
         if res is None or len(res) == 0:
             return None
         res = list(map(lambda x: Message(*x), res))
@@ -739,12 +739,12 @@ class Posts(Table):
     @classmethod
     def add(cls, post: Post) -> bool:
         query = cls._insert_query.format(cls.name, ', '.join(cls.columns), post.tup())
-        return _DataBase.execute_query(query)
+        return DataBase.execute_query(query)
 
     @classmethod
     def delete(cls, id: int) -> bool:
         query = cls._delete_query.format(cls.name, id)
-        return _DataBase.execute_query(query)
+        return DataBase.execute_query(query)
 
     @classmethod
     def get_posts_by_user_id(cls, user_id: int) -> list[Post]:
@@ -754,7 +754,7 @@ class Posts(Table):
         WHERE user_id = {}
         ORDER BY {} DESC
         '''.format(cls.name, user_id, cls.columns[2])
-        res = _DataBase.select_query(query)
+        res = DataBase.select_query(query)
         if res is None or len(res) == 0:
             return None
         res = list(map(lambda x: Post(*x), res))
@@ -781,7 +781,7 @@ class Posts(Table):
                    Follows.columns[0],
                    user_id,
                    cls.columns[2])
-        res = _DataBase.select_query(query)
+        res = DataBase.select_query(query)
         if res is None or len(res) == 0:
             return None
         res = list(map(lambda x: Post(*x), res))
@@ -794,7 +794,7 @@ class Posts(Table):
         FROM {}
         ORDER BY {} DESC
         '''.format(cls.name, cls.columns[2])
-        res = _DataBase.select_query(query)
+        res = DataBase.select_query(query)
         if res is None or len(res) == 0:
             return None
         res = list(map(lambda x: Post(*x), res))
@@ -807,7 +807,7 @@ class Posts(Table):
         FROM {}
         WHERE id = {}
         '''.format(cls.name, id)
-        res = _DataBase.select_query(query)
+        res = DataBase.select_query(query)
         if res is None or len(res) == 0:
             return None
         res = res[0]
@@ -827,7 +827,7 @@ class Posts(Table):
                    post.post_text,
                    str(post.last_edit_date),
                    post.id)
-        return _DataBase.execute_query(query)
+        return DataBase.execute_query(query)
 
     @classmethod
     def search_by_text(cls, text: str) -> list[Post]:
@@ -837,7 +837,7 @@ class Posts(Table):
         FROM {}
         WHERE title LIKE '%{}%'
         '''.format(cls.name, text)
-        res = _DataBase.select_query(query)
+        res = DataBase.select_query(query)
         if res is None or len(res) == 0:
             return None
         res = list(map(lambda x: Post(*x), res))
@@ -860,12 +860,12 @@ class Comments(Table):
     @classmethod
     def add(cls, comment: Comment) -> bool:
         query = cls._insert_query.format(cls.name, ', '.join(cls.columns), comment.tup())
-        return _DataBase.execute_query(query)
+        return DataBase.execute_query(query)
 
     @classmethod
     def delete(cls, id: int) -> bool:
         query = cls._delete_query.format(cls.name, id)
-        return _DataBase.execute_query(query)
+        return DataBase.execute_query(query)
 
     @classmethod
     def get_comments_by_post_id(cls, post_id: int):
@@ -874,7 +874,7 @@ class Comments(Table):
         FROM {}
         WHERE post_id = {}
         '''.format(cls.name, post_id)
-        res = _DataBase.select_query(query)
+        res = DataBase.select_query(query)
         if res is None or len(res) == 0:
             return None
         res = list(map(lambda x: Comment(*x), res))

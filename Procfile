@@ -1,1 +1,1 @@
-web: gunicorn messenger:app
+web: flask database create; gunicorn messenger:app
