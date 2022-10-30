@@ -10,7 +10,7 @@ from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.urls import url_parse
 from werkzeug.utils import secure_filename
 from app import app
-from app.forms import LoginForm, RegistrationForm, EditProfileForm, PostForm, MessageForm, CommentForm, SearchForm
+from app.forms import LoginForm, RegistrationForm, EditProfileForm, PostForm, MessageForm, CommentForm, SearchForm, ChatForm
 # наверноепроще просто заимпортить все модели предваритеьно установив моификаторы доступа rpotected на те которые импортить не надо (или определить функцию импорта)
 from app.models import User, Profile, Chat, Message, Post, Comment
 from app.models import Users, Profiles, Follows, Chats, User_in_chat, Messages, Posts, Comments
@@ -295,7 +295,6 @@ def write(login):
         chat = Chat(name=chat_name)
         # создаём чат и получаем его id
         chat_id = Chats.add(chat)
-        print(f'chat id = {chat_id}')
         # если есть проблемы создания (проблемы базы) вызовем ошибку
         if chat_id is None:
             abort(500)
@@ -364,16 +363,32 @@ def form_list(lst: list[Message], sorter: dict, depth: int):
         form_list(mes.child_list, sorter, depth+1)
 
 
-@app.route('/chats')
+@app.route('/chats', methods=['GET', 'POST'])
 @login_required
 def chats():
     chats: list[Chat] = User_in_chat.get_users_chats(current_user.id)
     if chats is None:
         chats = []
-    return render_template('chats.html', chats=chats)
-
-
-
+    form = ChatForm()
+    # устанавливаем список юзеров которых можно добавиь в чт (добавить можно тех на кого ты подписан)
+    choices = Follows.get_followings(current_user.id)
+    if choices is None:
+        choices = []
+    form.users.choices = [(u.id, f'{u.name}:' + '\r\n' + f'{u.login}') for u in choices]
+    if form.validate_on_submit():
+        print(form.users.data)
+        chat = Chat(name=form.chat_name.data)
+        chat_id = Chats.add(chat)
+        # если есть проблемы создания
+        if chat_id is None:
+            abort(500)
+        # добавляем выбранных юзеров в чат
+        for u_id in form.users.data:
+            User_in_chat.add(u_id, chat_id)
+        # себя тоже добавляем
+        User_in_chat.add(current_user.id, chat_id)
+        return redirect(url_for('chat', chat_id=chat_id))
+    return render_template('chats.html', chats=chats, form=form)
 
 
 

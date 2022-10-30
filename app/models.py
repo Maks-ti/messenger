@@ -146,18 +146,18 @@ class User(UserMixin, Entity):
         self.name: str = name
         self.password_hash: str = password_hash
 
-
     def __repr__(self):
         return f'<User {self.login}>'
 
+    def __str__(self):
+        string = f'{self.name}:' + '\r\n' + f'{self.login}'
+        return string
 
     def set_password(self, password: str):
         self.password_hash = generate_password_hash(password)
 
-
     def check_password(self, password: str):
         return check_password_hash(self.password_hash, password)
-
 
     def tup(self) -> tuple:
         return (self.login,

@@ -4,7 +4,7 @@
 
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileAllowed, FileRequired
-from wtforms import StringField, PasswordField, BooleanField, SubmitField, TextAreaField
+from wtforms import StringField, PasswordField, BooleanField, SubmitField, TextAreaField, SelectMultipleField
 from wtforms.validators import DataRequired, ValidationError,  EqualTo, Length
 from app.models import User, Users
 
@@ -59,4 +59,10 @@ class CommentForm(FlaskForm):
 class SearchForm(FlaskForm):
     text = StringField('Search string', validators=[DataRequired()])
     submit = SubmitField('Search')
+
+
+class ChatForm(FlaskForm):
+    chat_name = StringField('Chat name', validators=[DataRequired()])
+    users = SelectMultipleField('Users', coerce=int)
+    submit = SubmitField('Create chat')
 
