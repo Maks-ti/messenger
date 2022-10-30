@@ -1,6 +1,6 @@
 
 from app import app
-from models import DataBase
+from app.models import DataBase
 
 
 @app.cli.group()
